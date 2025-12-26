@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Offer Dashboard</title>
+
+<style>
+  body { font-family:-apple-system,BlinkMacSystemFont,Arial; background:#f2f3f7; margin:0; padding:24px; }
+  h1 { margin:0 0 18px; font-size:22px; font-weight:700; }
+  .topbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+
+  .search { flex:1; background:#fff; border-radius:20px; border:1px solid #e2e4ea; padding:8px 14px; display:flex; align-items:center; gap:8px; }
+  .search input{ border:none; outline:none; width:100%; font-size:14px; }
+
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; }
+  .filter-btn{ border:1px solid #d8dbe5; background:#fff; padding:6px 12px; border-radius:999px; font-size:13px; cursor:pointer; }
+  .filter-btn.active{ background:#2f54eb; color:#fff; border-color:#2f54eb; }
+
+  .group-title{ margin:18px 0 6px; color:#2c3e50; font-weight:700; }
+  .time-header{ margin:6px 0 6px; color:#1f2d42; font-weight:700; font-size:13px; }
+
+  .offers{ display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; }
+
+  .card{ background:#fff; border-radius:14px; border:1px solid #e1e4eb; padding:14px; box-shadow:0 6px 14px rgba(0,0,0,.05); }
+  .title{ font-weight:600; margin-bottom:6px; }
+  .meta{ font-size:12px; color:#666; margin-bottom:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  .time-tag{ background:#e8f3ff; color:#1e4fd1; padding:3px 8px; border-radius:999px; border:1px solid #cfe1ff; font-size:11px; }
+
+  .actions{ display:flex; justify-content:space-between; align-items:center; }
+  .action-buttons{ display:flex; gap:8px; }
+
+  .open-btn{ background:#2f54eb; border:1px solid #2f54eb; color:#fff; padding:6px 12px; border-radius:10px; font-size:12px; font-weight:600; text-decoration:none; }
+  .copy-btn{ border:1px solid #d0d5e4; background:#f7f8fc; padding:6px 12px; border-radius:10px; font-size:12px; cursor:pointer; }
+  .score{ background:#fff3cd; color:#856404; font-size:12px; font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid #ffeeba; }
+</style>
+</head>
+
+<body>
+
+<h1>LIST OFFER CỦA TRUNG BẢO</h1>
+
+<div class="topbar">
+  <div class="search">🔍 <input id="search" type="text" placeholder="Tìm offer"></div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-group="all">All</button>
+    <button class="filter-btn" data-group="(6)">(6)</button>
+    <button class="filter-btn" data-group="(8)">(8)</button>
+    <button class="filter-btn" data-group="(13)">(13)</button>
+    <button class="filter-btn" data-group="(27)">(27)</button>
+    <button class="filter-btn" data-group="(43)">(43)</button>
+    <button class="filter-btn" data-group="KHÁC">KHÁC</button>
+  </div>
+</div>
+
+<div id="container"></div>
+
+<script>
+/* 🔹 Detect khung giờ từ tiêu đề */
+function detectTimeSlot(text){
+  text = text.toLowerCase();
+
+  if(text.includes("cả ngày")) return { slot:"All Day", sort:0 };
+
+  const m = text.match(/(\d{1,2})h\s*-\s*(\d{1,2})h/);
+  if(!m) return { slot:"Unknown", sort:999 };
+
+  const start = Number(m[1]);
+  return { slot:`${start}h - ${m[2]}h`, sort:start };
+}
+
+/* 🔹 DATA của bạn (giữ nguyên, không đổi cấu trúc) */
+const groups = {
+  "(6)": [
+  {
+    t: "21809111 - (HF) (6) Moneylendersquad - Revshare - US - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=494&aff_id=hkghp",
+    s: 12
+  },
+  {
+    t: "21852290 - (HF) (6) Money Lender Squad - Revshare - US - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=738&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21852167 - (HF) (6) Money Lender Squad - Revshare - US - 1 đề nghị - 17h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=736&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21866781 - (HF) (6) 50kloans.com - Revshare - US - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=865&aff_id=hkghp",
+    s: 10
+  }
+],
+
+
+  "(8)": [
+  {
+    t: "21827076 - (HF) (8) Easy Capital Access - Revshare - US (GD2) - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=681&aff_id=hkghp",
+    s: 8
+  },
+  {
+    t: "21778407 - (HF) (8) Easy Capital Access - Revshare - US (GD2) - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=350&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21854920 - (HF) (8) Easy Capital Access - Revshare - US (GD2) - 1 đề nghị - 18h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=350&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21855617 - (HF) (8) Easy Capital Access - Revshare - US (GD2) - 1 đề nghị - 17h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=789&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21862860 - (HF) (8) Easy Capital Access - Revshare - US - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=834&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21868481 - (HF) (8) Easy Capital Access - Revshare - US - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=882&aff_id=hkghp",
+    s: 10
+  }
+],
+
+
+  "(13)": [
+  {
+    t: "21755794 - (HF) (13) Red Arrow Loans - Revshare - US (WG1) - 16h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=296&aff_id=hkghp",
+    s: 15
+  },
+  {
+    t: "354 - (HF) (13) MyLendingWallet - Revshare | US (WG1) - 17h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=562&aff_id=hkghp",
+    s: 15
+  },
+  {
+    t: "21848659 - (HF) (13) True American - Revshare - US (GD2) - 1 đề nghị - 14h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=725&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21850990 - (HF) (13) True American - Revshare - US (GD2) - 1 đề nghị - 14h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=730&aff_id=hkghp",
+    s: 12
+  },
+  {
+    t: "21865951 - (HF) (13) TrueAmericanLoan - Revshare - US (GD2) - 1 đề nghị - 17h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=860&aff_id=hkghp",
+    s: 10
+  }
+],
+
+
+"(27)": [
+  {
+    t: "187 - (HF) (27) Brighter.loans - Revshare | US (GD2) - 18h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=488&aff_id=hkghp",
+    s: 15
+  },
+  {
+    t: "21847441 - (HF) (27) Brighter Loans - Revshare - US (GD2) - 1 đề nghị - 17h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=720&aff_id=hkghp",
+    s: 15
+  },
+  {
+    t: "21824994 - (HF) (27) Brighter Loans - Revshare | US - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=595&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21819791 - (HF) (27) Brighter Loans - Revshare | US - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=557&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21819392 - (HF) (27) Brighter Loan - Short Term Loan - Revshare - US - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=553&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21815852 - (HF) (27) Personal Loan Locator - Revshare - US (IS) V1 - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=536&aff_id=hkghp",
+    s: 12
+  },
+  {
+    t: "21831410 - (HF) (27) Personal Loan Locator - Revshare - US (IS) V2 - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=619&aff_id=hkghp",
+    s: 12
+  },
+  {
+    t: "21834621 - (HF) (27) Personal Loan Locator - US (IS) V3 - 1 đề nghị - 18h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=639&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21838516 - (HF) (27) Personal Loan Locator - US (IS) V4 - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=662&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "1841731 - (HF) (27) Personal Loan Locator - US (IS) V5 - 1 đề nghị - 17h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=680&aff_id=hkghp",
+    s: 10
+  }
+],
+
+
+"(43)": [
+  {
+    t: "21803076 - (HF) (43) Bad Credit Loan - Revshare - US - 18h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=449&aff_id=hkghp",
+    s: 8
+  },
+  {
+    t: "539 - (HF) (43) BadCreditLoans.com - Revshare | US (GD2) - 1 đề nghị - 18h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=659&aff_id=hkghp",
+    s: 8
+  },
+  {
+    t: "114 - (HF) (43) Bad Credit Loans.com V2 - Revshare - US - 17h - 10h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=838&aff_id=hkghp",
+    s: 15
+  }
+],
+
+
+"KHÁC": [
+  {
+    t: "21854567 - (79) Adsmith - US (GD2) - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=812&aff_id=hkghp",
+    s: 5
+  },
+  {
+    t: "675 - (79) Adsmith - US (GD2) - 1 đề nghị - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=821&aff_id=hkghp",
+    s: 5
+  },
+  {
+    t: "21864603 - (HF) (7) Lending for bad credit - Revshare - US (GD2) - 1 đề nghị - 18h - 12h",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=849&aff_id=hkghp",
+    s: 10
+  },
+  {
+    t: "21803601 - (HF) (37) Tidal Lending - Revshare - US (IS) - cả ngày",
+    u: "https://trafficspark.net/click/?key=87024&offer_id=455&aff_id=hkghp",
+    s: 15
+  }
+]
+
+};
+
+/* 🔹 Render theo GROUP → chia nhỏ theo TIME SLOT */
+const container = document.getElementById("container");
+
+function render(listByGroup){
+  container.innerHTML = "";
+
+  Object.entries(listByGroup).forEach(([groupName, offers])=>{
+    if(!offers.length) return;
+
+    const group = document.createElement("div");
+    group.innerHTML = `<div class="group-title">${groupName}</div>`;
+    container.appendChild(group);
+
+    // 👉 Gom offer vào từng khung giờ
+    const byTime = {};
+    offers.forEach(o=>{
+      const t = detectTimeSlot(o.t);
+      if(!byTime[t.slot]) byTime[t.slot] = { sort:t.sort, list:[] };
+      byTime[t.slot].list.push(o);
+    });
+
+    // 👉 Sắp xếp khung giờ theo thứ tự
+    const ordered = Object.entries(byTime).sort((a,b)=>a[1].sort - b[1].sort);
+
+    ordered.forEach(([slot,data])=>{
+      const timeBlock = document.createElement("div");
+      timeBlock.innerHTML = `
+        <div class="time-header">⏰ ${slot}</div>
+        <div class="offers"></div>
+      `;
+      const wrap = timeBlock.querySelector(".offers");
+
+      data.list.forEach(o=>{
+        const card = document.createElement("div");
+        card.className="card";
+        card.innerHTML = `
+          <div class="title">${o.t}</div>
+          <div class="meta">
+            Revshare • US Market
+            <span class="time-tag">${slot}</span>
+          </div>
+
+          <div class="actions">
+            <span class="score">${o.s ?? 0} Point</span>
+            <div class="action-buttons">
+              <a class="open-btn" href="${o.u}" target="_blank">🚀 Mở Offer</a>
+              <button class="copy-btn" data-url="${o.u}">📋 Copy link</button>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(card);
+      });
+
+      group.appendChild(timeBlock);
+    });
+  });
+
+  document.querySelectorAll(".copy-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      navigator.clipboard.writeText(btn.dataset.url);
+      btn.innerText="✓ Copied";
+      setTimeout(()=> btn.innerText="📋 Copy link", 1200);
+    }
+  });
+}
+
+render(groups);
+
+/* 🔹 Filter group */
+document.querySelectorAll(".filter-btn[data-group]").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const g = btn.dataset.group;
+    if(g==="all") return render(groups);
+    render({ [g]: groups[g] });
+  }
+});
+
+/* 🔹 Search */
+document.getElementById("search").addEventListener("input", e=>{
+  const q = e.target.value.toLowerCase();
+  const filtered = {};
+  Object.entries(groups).forEach(([name, offers])=>{
+    filtered[name] = offers.filter(o=>o.t.toLowerCase().includes(q));
+  });
+  render(filtered);
+});
+</script>
+
+</body>
+</html>
